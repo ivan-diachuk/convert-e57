@@ -72,10 +72,7 @@ pipeline {
                 )]) {
                     withAWS(credentials: MAIN_AWS_CREDENTIALS_NAME) {
                         sh '''
-                            docker build \
-                            -f .docker/Dockerfile.$STACK \
-                            -t $IMAGE_REPO_NAME:$IMAGE_TAG \
-                            --no-cache .
+                            docker build -t $IMAGE_REPO_NAME:$IMAGE_TAG --no-cache .
                         '''
                     }
                 }
