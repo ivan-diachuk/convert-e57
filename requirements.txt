@@ -1,0 +1,6 @@
+numpy==1.24.3
+pye57==0.4.16
+natsort==8.4.0
+requests==2.31.0
+opencv-python==4.8.0.76
+python-dotenv~=1.0.1
