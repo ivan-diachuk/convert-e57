@@ -79,18 +79,6 @@ pipeline {
                 }
             }
         }
-
-        stage('Login to AWS ECR') {
-            steps {
-                withAWS(credentials: MAIN_AWS_CREDENTIALS_NAME) {
-                    sh '''
-                        aws ecr get-login-password --region $AWS_REGION | \
-                        docker login --username AWS --password-stdin $IMAGE_REPO_REGISTRY
-                    '''
-                }
-            }
-        }
-
         stage('Push to ECR') {
             steps {
                 withAWS(credentials: MAIN_AWS_CREDENTIALS_NAME) {
