@@ -25,9 +25,8 @@ pipeline {
 
     environment {
         IMAGE_TAG = 'latest'
-        IMAGE_REPO_REGISTRY = 'public.ecr.aws/e0w7o6a1/e57-converter-repository'
-        GIT_REPOSITORY_URL = 'https://treedis_automation@bitbucket.org/treedis/convert-e57.git'
         IMAGE_REPO_NAME = 'e57-converter-repository'
+        GIT_REPOSITORY_URL = 'https://treedis_automation@bitbucket.org/treedis/convert-e57.git'
     }
 
     stages {
@@ -81,22 +80,28 @@ pipeline {
         }
 
         stage('Login to AWS ECR') {
+            environment {
+                REPOSITORY_URI = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
+            }
             steps {
                 withAWS(credentials: MAIN_AWS_CREDENTIALS_NAME) {
                     sh '''
                         aws ecr get-login-password --region $AWS_REGION | \
-                        docker login --username AWS --password-stdin $IMAGE_REPO_REGISTRY
+                        docker login --username AWS --password-stdin $REPOSITORY_URI
                     '''
                 }
             }
         }
 
         stage('Push to ECR') {
+            environment {
+                REPOSITORY_URI = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${IMAGE_REPO_NAME}"
+            }
             steps {
                 withAWS(credentials: MAIN_AWS_CREDENTIALS_NAME) {
                     sh '''
-                        docker tag $IMAGE_REPO_NAME:$IMAGE_TAG $IMAGE_REPO_REGISTRY:$IMAGE_TAG
-                        docker push $IMAGE_REPO_REGISTRY:$IMAGE_TAG
+                        docker tag $IMAGE_REPO_NAME:$IMAGE_TAG $REPOSITORY_URI:$IMAGE_TAG
+                        docker push $REPOSITORY_URI:$IMAGE_TAG
                         docker system prune -f
                     '''
                 }
