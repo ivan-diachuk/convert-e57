@@ -81,8 +81,9 @@ pipeline {
         }
         stage('Push to ECR') {
             steps {
-                withAWS(credentials: MAIN_AWS_CREDENTIALS_NAME) {
+                withAWS(credentials: MAIN_AWS_CREDENTIALS_NAME, region: "${params.AWS_REGION}") {
                     sh '''
+                        aws ecr-public get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin public.ecr.aws
                         docker tag $IMAGE_REPO_NAME:$IMAGE_TAG $IMAGE_REPO_REGISTRY:$IMAGE_TAG
                         docker push $IMAGE_REPO_REGISTRY:$IMAGE_TAG
                         docker system prune -f
@@ -90,6 +91,7 @@ pipeline {
                 }
             }
         }
+
     }
 
     post {
