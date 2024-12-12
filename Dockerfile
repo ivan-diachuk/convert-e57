@@ -9,15 +9,8 @@ COPY . /app
 
 RUN pip install --upgrade pip
 
-# Install system dependencies for OpenCV
-RUN apt-get update && apt-get install -y \
-    libglib2.0-0 \
-    libglvnd0 \
-    libxrender1 \
-    libxext6 \
-    libgl1 \
-    unzip \
-    && rm -rf /var/lib/apt/lists/* \
+# Install required library for OpenCV
+RUN apt-get update && apt-get install -y libgl1 libglvnd0 unzip libglib2.0-0
 
 # Install dependencies from requirements.txt (make sure this file exists)
 RUN pip install --no-cache-dir -r requirements.txt
