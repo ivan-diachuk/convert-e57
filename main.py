@@ -36,6 +36,7 @@ def fetch_matterport_assets(auth_key, matter_id):
             }}
         }}
     """
+    print(query)
     payload = {"query": query}
 
     try:
