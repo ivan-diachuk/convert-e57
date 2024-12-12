@@ -13,5 +13,5 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Install additional dependencies (like unzip if needed)
 RUN apt-get update && apt-get install -y unzip
 
-
-CMD ["python3", "--varsion"]
+# Correct the CMD instruction
+CMD ["python3", "--version"]
