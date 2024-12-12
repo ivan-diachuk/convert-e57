@@ -10,6 +10,8 @@ COPY . /app
 # Install dependencies from requirements.txt (make sure this file exists)
 RUN pip install --no-cache-dir -r requirements.txt
 
+RUN pip install opencv-python
+
 # Install additional dependencies (like unzip if needed)
 RUN apt-get update && apt-get install -y unzip
 
