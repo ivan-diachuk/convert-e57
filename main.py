@@ -42,7 +42,7 @@ def fetch_matterport_assets(auth_key, matter_id):
         response = requests.post(url, json=payload, headers=headers)
         response.raise_for_status()
         data = response.json()
-
+        print(data)
         # Extract the URL from the assets
         assets = data.get("data", {}).get("model", {}).get("bundle", {}).get("assets", [])
         if not assets:
