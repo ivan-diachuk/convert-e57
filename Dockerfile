@@ -10,7 +10,7 @@ COPY . /app
 RUN pip install --upgrade pip
 
 # Install required library for OpenCV
-RUN apt-get update && apt-get install -y libgl1 && apt-get install -y unzip
+RUN apt-get update && apt-get install -y libgl1 libglvnd0 unzip libglib2.0-0
 
 # Install dependencies from requirements.txt (make sure this file exists)
 RUN pip install --no-cache-dir -r requirements.txt
