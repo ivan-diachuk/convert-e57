@@ -5,9 +5,11 @@ import zipfile
 import shutil
 from unpack import unpack
 from submit import submit
+import logging
 
 load_dotenv()
 
+logging.basicConfig(level=logging.DEBUG)
 
 def fetch_matterport_assets(auth_key, matter_id):
     """
@@ -36,14 +38,14 @@ def fetch_matterport_assets(auth_key, matter_id):
             }}
         }}
     """
-    print(query)
+    logging.info(query)
     payload = {"query": query}
 
     try:
         response = requests.post(url, json=payload, headers=headers)
         response.raise_for_status()
         data = response.json()
-        print(data)
+        logging.info(data)
         # Extract the URL from the assets
         assets = data.get("data", {}).get("model", {}).get("bundle", {}).get("assets", [])
         if not assets:
