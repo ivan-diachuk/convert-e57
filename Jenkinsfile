@@ -1,5 +1,5 @@
 def GIT_CREDENTIALS = 'bitbucket-password-credentials'
-def AGENT_LABEL = 'ec2-t2-micro'
+def AGENT_LABEL = 'main'
 def DEFAULT_AWS_REGION = 'us-east-1'
 def MAIN_AWS_CREDENTIALS_NAME = 'main-aws-credentials'
 def ACCOUNT_NAME = 'Matter Software Ltd'
