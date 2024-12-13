@@ -90,12 +90,12 @@ class MapConstructionParams:
     preservePoses: Optional[bool] = True
 
 
-def construct_map(map_name: str, params: MapConstructionParams) -> str:
+def construct_map(params: MapConstructionParams) -> str:
     complete_url = url + "/construct"
 
     data = {
         "token": token,
-        "name": map_name,
+        "name": os.getenv('FILE_PREFIX'),
         "featureCount": params.featureCount,
         "preservePoses": params.preservePoses,
     }
@@ -131,7 +131,7 @@ class ProcessParams:
     pose_distance_threshold: Optional[float] = -1
 
 
-def process_poses(map_name: str, images_and_poses: List[dict], params: ProcessParams, map_params: MapConstructionParams) -> None:
+def process_poses(images_and_poses: List[dict], params: ProcessParams, map_params: MapConstructionParams) -> None:
     # bounding box for debugging
     bb_min = [math.inf, math.inf, math.inf]
     bb_max = [-math.inf, -math.inf, -math.inf]
@@ -201,10 +201,10 @@ def process_poses(map_name: str, images_and_poses: List[dict], params: ProcessPa
         print(f'bb_max:\t{np.array(bb_max)}')
 
     if (params.submit):
-        construct_map(map_name, map_params)
+        construct_map(map_params)
 
 
-def main(map_name: str, input_directory: str, process_params: ProcessParams, map_params: MapConstructionParams) -> None:
+def main(input_directory: str, process_params: ProcessParams, map_params: MapConstructionParams) -> None:
     json_files = []
     dirs = natsorted(os.listdir(input_directory))
     for i, dir in enumerate(dirs):
@@ -223,7 +223,7 @@ def main(map_name: str, input_directory: str, process_params: ProcessParams, map
             x = {'image': image_path, 'pose': j}
             images_and_poses.append(x)
 
-    process_poses(map_name, images_and_poses, process_params, map_params)
+    process_poses(images_and_poses, process_params, map_params)
 
 
 # 1. Install all dependencies mentioned at the top of the file with pip
@@ -241,4 +241,4 @@ def submit(map_name: str):
     process_params = ProcessParams(submit=True)
     map_params = MapConstructionParams()
 
-    main(map_name, input_directory, process_params, map_params)
+    main(input_directory, process_params, map_params)
