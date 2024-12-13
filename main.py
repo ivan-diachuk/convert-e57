@@ -9,7 +9,7 @@ import logging
 
 load_dotenv()
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 
 def fetch_matterport_assets(auth_key, matter_id):
     """
@@ -38,14 +38,12 @@ def fetch_matterport_assets(auth_key, matter_id):
             }}
         }}
     """
-    logging.info(query)
     payload = {"query": query}
 
     try:
         response = requests.post(url, json=payload, headers=headers)
         response.raise_for_status()
         data = response.json()
-        logging.info(data)
         # Extract the URL from the assets
         assets = data.get("data", {}).get("model", {}).get("bundle", {}).get("assets", [])
         if not assets:
@@ -193,12 +191,12 @@ def run_submit_script():
 
 def main():
     # Load environment variables
-    auth_key = os.getenv("MATTERPORT_API_KEY")
+    auth_key = os.getenv("MATTERPORT_OAUTH_TOKEN")
     matter_id = os.getenv("MATTERPORT_MATTER_ID")
 
     if not auth_key or not matter_id:
         print("Error: Missing required environment variables.")
-        print("Ensure MATTERPORT_API_KEY and MATTERPORT_MATTER_ID are set.")
+        print("Ensure MATTERPORT_OAUTH_TOKEN and MATTERPORT_MATTER_ID are set.")
         return
 
     output_file = "treedis.zip"
