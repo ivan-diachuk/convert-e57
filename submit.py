@@ -8,6 +8,7 @@ import numpy as np  # pip install numpy
 import requests  # pip install requests
 import cv2  # pip install opencv-python
 from dotenv import load_dotenv
+import re
 
 # Load environment variables from .env file
 load_dotenv()
@@ -90,12 +91,12 @@ class MapConstructionParams:
     preservePoses: Optional[bool] = True
 
 
-def construct_map(params: MapConstructionParams) -> str:
+def construct_map(params: MapConstructionParams, index: int) -> str:
     complete_url = url + "/construct"
 
     data = {
         "token": token,
-        "name": os.getenv('FILE_PREFIX'),
+        "name": f"{ os.getenv('FILE_PREFIX') }_{index}",
         "featureCount": params.featureCount,
         "preservePoses": params.preservePoses,
     }
@@ -135,7 +136,7 @@ class ProcessParams:
     pose_distance_threshold: Optional[float] = -1
 
 
-def process_poses(images_and_poses: List[dict], params: ProcessParams, map_params: MapConstructionParams) -> None:
+def process_poses(images_and_poses: List[dict], params: ProcessParams, map_params: MapConstructionParams, index: int) -> None:
     # bounding box for debugging
     bb_min = [math.inf, math.inf, math.inf]
     bb_max = [-math.inf, -math.inf, -math.inf]
@@ -205,10 +206,10 @@ def process_poses(images_and_poses: List[dict], params: ProcessParams, map_param
         print(f'bb_max:\t{np.array(bb_max)}')
 
     if params.submit:
-        construct_map(map_params)
+        construct_map(map_params, index)
 
 
-def main(input_directory: str, process_params: ProcessParams, map_params: MapConstructionParams) -> None:
+def main(input_directory: str, process_params: ProcessParams, map_params: MapConstructionParams, index: int) -> None:
     json_files = []
     dirs = natsorted(os.listdir(input_directory))
     for i, dir in enumerate(dirs):
@@ -227,7 +228,7 @@ def main(input_directory: str, process_params: ProcessParams, map_params: MapCon
             x = {'image': image_path, 'pose': j}
             images_and_poses.append(x)
 
-    process_poses(images_and_poses, process_params, map_params)
+    process_poses(images_and_poses, process_params, map_params, index)
 
 
 # 1. Install all dependencies mentioned at the top of the file with pip
@@ -238,6 +239,13 @@ def main(input_directory: str, process_params: ProcessParams, map_params: MapCon
 # 6. Run the script and go check Immersal Develop Portal if no errors were presented
 
 def submit(map_name: str):
+    # Extract the number from the map_name (e.g., 'thistreedis_0-out')
+    match = re.search(r"_(\d+)-out", map_name)
+    if match:
+        index = match.group(1)
+    else:
+        raise ValueError(f"Invalid map_name format: {map_name}")
+
     # Path of your Matterport scan output
     input_directory = r"./scans/" + map_name + "-out/"
 
@@ -245,4 +253,4 @@ def submit(map_name: str):
     process_params = ProcessParams(submit=True)
     map_params = MapConstructionParams()
 
-    main(input_directory, process_params, map_params)
+    main(input_directory, process_params, map_params, index)
