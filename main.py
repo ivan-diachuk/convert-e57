@@ -12,6 +12,7 @@ load_dotenv()
 
 logging.basicConfig(level=logging.INFO)
 
+
 def fetch_matterport_assets(auth_key, matter_id):
     """
     Fetches assets from the Matterport API.
@@ -145,7 +146,7 @@ def run_unpack_script():
                     os.remove(file_path)
                 except Exception as e:
                     logging.error(f"Error unpacking file '{file_name}': {e}")
-                    continue
+                    raise
 
         logging.info("Unpack script completed.")
 
@@ -170,6 +171,7 @@ def run_submit_script():
                     submit(name)
                 except Exception as e:
                     logging.error(f"Error submitting {name}: {e}")
+                    raise
 
         shutil.rmtree(scans_folder)
         logging.info("Submit script completed.")
@@ -201,6 +203,7 @@ def main():
     except Exception as e:
         logging.error(f"Fatal error: {e}")
         raise
+
 
 if __name__ == "__main__":
     try:

@@ -104,6 +104,10 @@ def construct_map(params: MapConstructionParams) -> str:
 
     r = requests.post(complete_url, data=json_data)
     print(r.text)
+
+    if r.text.error != "none":
+        raise RuntimeError(f"Error unzipping file: {r.text.error}")
+
     return r.text
 
 
@@ -200,7 +204,7 @@ def process_poses(images_and_poses: List[dict], params: ProcessParams, map_param
         print(f'bb_min:\t{np.array(bb_min)}')
         print(f'bb_max:\t{np.array(bb_max)}')
 
-    if (params.submit):
+    if params.submit:
         construct_map(map_params)
 
 
@@ -237,7 +241,7 @@ def submit(map_name: str):
     # Path of your Matterport scan output
     input_directory = r"./scans/" + map_name + "-out/"
 
-    # set submit to False to only visualize poses
+    # set submit too False to only visualize poses
     process_params = ProcessParams(submit=True)
     map_params = MapConstructionParams()
 
