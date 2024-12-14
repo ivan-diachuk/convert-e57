@@ -6,6 +6,7 @@ import shutil
 from unpack import unpack
 from submit import submit
 import logging
+import sys
 
 load_dotenv()
 
@@ -56,8 +57,7 @@ def fetch_matterport_assets(auth_key, matter_id):
         return asset_url
 
     except requests.exceptions.RequestException as e:
-        print(f"Error fetching assets: {e}")
-        raise
+        raise RuntimeError(f"Error fetching assets: {e}")
 
 
 def download_file(url, output_file):
@@ -69,7 +69,7 @@ def download_file(url, output_file):
     return: None
     """
     try:
-        print(f"Downloading from {url}...")
+        logging.info(f"Downloading from {url}...")
         response = requests.get(url, stream=True)
         response.raise_for_status()  # Raise an error for HTTP status codes >= 400
 
@@ -77,10 +77,9 @@ def download_file(url, output_file):
         with open(output_file, "wb") as file:
             for chunk in response.iter_content(chunk_size=8192):
                 file.write(chunk)
-        print(f"File saved as {output_file}.")
+        logging.info(f"File saved as {output_file}.")
     except requests.exceptions.RequestException as e:
-        print(f"Error downloading the file: {e}")
-        raise
+        raise RuntimeError(f"Error downloading the file: {e}")
 
 
 def unzip_file(zip_path, extract_to):
@@ -92,17 +91,16 @@ def unzip_file(zip_path, extract_to):
     return: None
     """
     try:
-        print(f"Unzipping {zip_path} to {extract_to}...")
+        logging.info(f"Unzipping {zip_path} to {extract_to}...")
         with zipfile.ZipFile(zip_path, 'r') as zip_ref:
             zip_ref.extractall(extract_to)
-        print(f"Unzipped files to {extract_to}.")
+        logging.info(f"Unzipped files to {extract_to}.")
     except zipfile.BadZipFile as e:
-        print(f"Error unzipping file: {e}")
-        raise
+        raise RuntimeError(f"Error unzipping file: {e}")
     finally:
         if os.path.exists(zip_path):
             os.remove(zip_path)
-            print(f"Deleted zip file: {zip_path}")
+            logging.info(f"Deleted zip file: {zip_path}")
 
 
 def rename_and_move_files(source_dir, target_dir):
@@ -122,108 +120,91 @@ def rename_and_move_files(source_dir, target_dir):
         new_name = f"treedis_{index}.e57"
         new_path = os.path.join(target_dir, new_name)
 
-        print(f"Renaming {old_path} to {new_path}...")
+        logging.info(f"Renaming {old_path} to {new_path}...")
         os.rename(old_path, new_path)
 
     # Remove the source directory after files are moved
-    print(f"Removing source directory: {source_dir}...")
+    logging.info(f"Removing source directory: {source_dir}...")
     shutil.rmtree(source_dir)
-    print(f"All files have been renamed and moved to {target_dir}.")
+    logging.info(f"All files have been renamed and moved to {target_dir}.")
 
 
 def run_unpack_script():
-    if __name__ == "__main__":
-        # Directory containing the scans
-        scans_folder = "./scans"
+    scans_folder = "./scans"
 
-        try:
-            # Check if the directory exists
-            if not os.path.exists(scans_folder):
-                print(f"The folder '{scans_folder}' does not exist.")
-                return
+    try:
+        if not os.path.exists(scans_folder):
+            raise RuntimeError(f"The folder '{scans_folder}' does not exist.")
 
-            # Iterate over all files in the scans folder
-            for file_name in os.listdir(scans_folder):
-                # Create the full file path
-                file_path = os.path.join(scans_folder, file_name)
+        for file_name in os.listdir(scans_folder):
+            file_path = os.path.join(scans_folder, file_name)
 
-                # Check if it's a file (not a directory)
-                if os.path.isfile(file_path):
-                    try:
-                        # Run the unpack function
-                        unpack(file_path)
-                        os.remove(file_path)
-                    except Exception as e:
-                        print(f"Error unpacking file '{file_name}': {e}")
-                        continue  # Skip to the next file
+            if os.path.isfile(file_path):
+                try:
+                    unpack(file_path)
+                    os.remove(file_path)
+                except Exception as e:
+                    logging.error(f"Error unpacking file '{file_name}': {e}")
+                    continue
 
-            print("Processing complete.")
+        logging.info("Unpack script completed.")
 
-        except Exception as e:
-            print(f"An error occurred: {e}")
+    except Exception as e:
+        raise RuntimeError(f"An error occurred during unpacking: {e}")
 
 
 def run_submit_script():
     scans_folder = "./scans"
 
-    # Check if the directory exists
-    if not os.path.exists(scans_folder):
-        print(f"The folder '{scans_folder}' does not exist.")
-        return
+    try:
+        if not os.path.exists(scans_folder):
+            raise RuntimeError(f"The folder '{scans_folder}' does not exist.")
 
-    # Iterate through all items in the scans folder
-    for item in os.listdir(scans_folder):
-        # Create the full path
-        folder_path = os.path.join(scans_folder, item)
+        for item in os.listdir(scans_folder):
+            folder_path = os.path.join(scans_folder, item)
 
-        # Check if it's a directory and matches the naming convention
-        if os.path.isdir(folder_path) and item.endswith("-out"):
-            name = item.split("-out")[0]
+            if os.path.isdir(folder_path) and item.endswith("-out"):
+                name = item.split("-out")[0]
 
-            try:
-                submit(name)
-            except Exception as e:
-                print(f"Error submitting {name}: {e}")
+                try:
+                    submit(name)
+                except Exception as e:
+                    logging.error(f"Error submitting {name}: {e}")
 
-    shutil.rmtree(scans_folder)
-    print("Processing submit complete.")
+        shutil.rmtree(scans_folder)
+        logging.info("Submit script completed.")
+
+    except Exception as e:
+        raise RuntimeError(f"An error occurred during submission: {e}")
 
 
 def main():
-    # Load environment variables
     auth_key = os.getenv("MATTERPORT_OAUTH_TOKEN")
-    matter_id = os.getenv("MATTERPORT_MATTER_ID")
+    matter_id = os.getenv("MATTERPORT_ID")
 
     if not auth_key or not matter_id:
-        print("Error: Missing required environment variables.")
-        print("Ensure MATTERPORT_OAUTH_TOKEN and MATTERPORT_MATTER_ID are set.")
-        return
+        raise EnvironmentError(
+            "Missing required environment variables: MATTERPORT_OAUTH_TOKEN and MATTERPORT_ID."
+        )
 
     output_file = "treedis.zip"
     extract_to = "tmp_scans"
     scans_dir = "scans"
 
     try:
-        # Fetch the asset URL
         asset_url = fetch_matterport_assets(auth_key, matter_id)
-
-        # Download the file if the URL is available
         download_file(asset_url, output_file)
-
-        # Unzip the downloaded file
         unzip_file(output_file, extract_to)
-
-        # Rename and move `.e57` files to the scans folder
         rename_and_move_files(extract_to, scans_dir)
-
         run_unpack_script()
-
         run_submit_script()
-    except ValueError as e:
-        print(f"Error: {e}")
     except Exception as e:
-        print(f"An unexpected error occurred: {e}")
-
+        logging.error(f"Fatal error: {e}")
+        raise
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except Exception as e:
+        logging.critical(f"Program terminated with an error: {e}", exc_info=True)
+        sys.exit(1)
