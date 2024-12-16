@@ -146,11 +146,12 @@ def run_unpack_script():
                     os.remove(file_path)
                 except Exception as e:
                     logging.error(f"Error unpacking file '{file_name}': {e}")
-                    raise
+                    raise e
 
         logging.info("Unpack script completed.")
 
     except Exception as e:
+
         raise RuntimeError(f"An error occurred during unpacking: {e}")
 
 
@@ -171,13 +172,37 @@ def run_submit_script():
                     submit(name)
                 except Exception as e:
                     logging.error(f"Error submitting {name}: {e}")
-                    raise
+                    raise e
 
         shutil.rmtree(scans_folder)
         logging.info("Submit script completed.")
 
     except Exception as e:
         raise RuntimeError(f"An error occurred during submission: {e}")
+
+
+def send_job_status_request(name, status, message):
+    api_domain = os.getenv("API_DOMAIN")
+    endpoint = f"{api_domain}/v1/api/convert/updateJobStatus"
+
+    payload = {
+        "name": name,
+        "status": status,
+        "message": message
+    }
+
+    try:
+        response = requests.post(endpoint, json=payload)
+
+        # Check if the request was successful
+        if response.status_code == 200:
+            logging.info(f"Response: {str(response.json())}")
+        else:
+            logging.error(f"Failed with status code: {response.status_code}")
+            logging.error(f"Response: {str(response.text)}")
+    except requests.exceptions.RequestException as e:
+        # Handle request exceptions
+        logging.error(f"Error: {str(e)}")
 
 
 def main():
@@ -202,7 +227,8 @@ def main():
         run_submit_script()
     except Exception as e:
         logging.error(f"Fatal error: {e}")
-        raise
+        send_job_status_request(os.getenv('FILE_PREFIX'), "processingError", str(e))
+        raise e
 
 
 if __name__ == "__main__":
