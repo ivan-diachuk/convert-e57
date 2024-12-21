@@ -240,7 +240,7 @@ def main(input_directory: str, process_params: ProcessParams, map_params: MapCon
 
 def submit(map_name: str):
     # Extract the number from the map_name (e.g., 'thistreedis_0-out')
-    match = re.search(r"_(\d+)-out", map_name)
+    match = re.search(r"_(\d+)", map_name)
     if match:
         index = match.group(1)
     else:
