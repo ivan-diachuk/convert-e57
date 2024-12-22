@@ -96,7 +96,7 @@ def construct_map(params: MapConstructionParams, index: int) -> str:
 
     data = {
         "token": token,
-        "name": f"{ os.getenv('FILE_PREFIX') }_{index}",
+        "name": f"{os.getenv('FILE_PREFIX')}_{index}",
         "featureCount": params.featureCount,
         "preservePoses": params.preservePoses,
     }
@@ -106,8 +106,8 @@ def construct_map(params: MapConstructionParams, index: int) -> str:
     r = requests.post(complete_url, data=json_data)
     print(r.text)
 
-    if r.text.error != "none":
-        raise RuntimeError(f"Error unzipping file: {r.text.error}")
+    # if r.text.error != "none":
+    #    raise RuntimeError(f"Error unzipping file: {r.text.error}")
 
     return r.text
 
@@ -136,7 +136,8 @@ class ProcessParams:
     pose_distance_threshold: Optional[float] = -1
 
 
-def process_poses(images_and_poses: List[dict], params: ProcessParams, map_params: MapConstructionParams, index: int) -> None:
+def process_poses(images_and_poses: List[dict], params: ProcessParams, map_params: MapConstructionParams,
+                  index: int) -> None:
     # bounding box for debugging
     bb_min = [math.inf, math.inf, math.inf]
     bb_max = [-math.inf, -math.inf, -math.inf]
