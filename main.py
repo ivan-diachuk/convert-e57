@@ -7,28 +7,23 @@ from unpack import unpack
 from submit import submit
 import logging
 import sys
-import time
-
 
 load_dotenv()
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s",
+)
 
 
 def fetch_matterport_assets(auth_key, matter_id):
     """
     Fetches assets from the Matterport API.
-
-    param auth_key: The API authentication key.
-    param query: The GraphQL query string.
-    return: The first asset URL.
-    raises ValueError: If no asset URL is found.
     """
-
     url = "https://api.matterport.com/api/mp/models/graph"
     headers = {
         "Authorization": f"Bearer {auth_key}",
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
     }
     query = f"""
         query Model {{
@@ -48,58 +43,49 @@ def fetch_matterport_assets(auth_key, matter_id):
         response = requests.post(url, json=payload, headers=headers)
         response.raise_for_status()
         data = response.json()
-        # Extract the URL from the assets
         assets = data.get("data", {}).get("model", {}).get("bundle", {}).get("assets", [])
-        if not assets:
-            raise ValueError("No assets found in the response.")
-
-        asset_url = assets[0].get("url")  # Assuming you want the first URL
-        if not asset_url:
-            raise ValueError("Asset URL not found in the assets.")
-
-        return asset_url
+        if not assets or not assets[0].get("url"):
+            raise ValueError("No valid asset URL found in the response.")
+        return assets[0]["url"]
 
     except requests.exceptions.RequestException as e:
-        raise RuntimeError(f"Error fetching assets: {e}")
+        logging.error("Failed to fetch Matterport assets", exc_info=True)
+        raise RuntimeError(f"Error fetching assets from Matterport: {e}") from e
 
 
 def download_file(url, output_file):
     """
-    Downloads a file from the given URL and saves it with the specified name.
-
-    param url: The URL to download the file from.
-    param output_file: The name of the file to save the downloaded content.
-    return: None
+    Downloads a file from the given URL.
     """
     try:
-        logging.info(f"Downloading from {url}...")
+        logging.info(f"Starting download from {url}...")
         response = requests.get(url, stream=True)
-        response.raise_for_status()  # Raise an error for HTTP status codes >= 400
+        response.raise_for_status()
 
-        # Save the content to a file
         with open(output_file, "wb") as file:
             for chunk in response.iter_content(chunk_size=8192):
                 file.write(chunk)
-        logging.info(f"File saved as {output_file}.")
+        logging.info(f"File successfully downloaded as {output_file}.")
+
     except requests.exceptions.RequestException as e:
-        raise RuntimeError(f"Error downloading the file: {e}")
+        logging.error("File download failed", exc_info=True)
+        raise RuntimeError(f"Error downloading the file from {url}: {e}") from e
 
 
 def unzip_file(zip_path, extract_to):
     """
-    Unzips the specified zip file to a given directory and deletes the zip file afterward.
-
-    param zip_path: Path to the zip file.
-    param extract_to: Directory where the zip file will be extracted.
-    return: None
+    Unzips a file and removes the zip file afterward.
     """
     try:
-        logging.info(f"Unzipping {zip_path} to {extract_to}...")
-        with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+        logging.info(f"Extracting {zip_path} to {extract_to}...")
+        with zipfile.ZipFile(zip_path, "r") as zip_ref:
             zip_ref.extractall(extract_to)
-        logging.info(f"Unzipped files to {extract_to}.")
+        logging.info(f"Extraction completed to {extract_to}.")
+
     except zipfile.BadZipFile as e:
-        raise RuntimeError(f"Error unzipping file: {e}")
+        logging.error("Failed to unzip file", exc_info=True)
+        raise RuntimeError(f"Error unzipping the file {zip_path}: {e}") from e
+
     finally:
         if os.path.exists(zip_path):
             os.remove(zip_path)
@@ -108,97 +94,133 @@ def unzip_file(zip_path, extract_to):
 
 def rename_and_move_files(source_dir, target_dir):
     """
-    Renames and moves `.e57` files from the source directory to the target directory.
-
-    param source_dir: The directory containing the extracted files.
-    param target_dir: The directory to move and rename files into.
-    return: None
+    Renames and moves `.e57` files.
     """
     if not os.path.exists(target_dir):
-        os.makedirs(target_dir)  # Create the target directory if it doesn't exist
+        os.makedirs(target_dir)
 
-    files = sorted([f for f in os.listdir(source_dir) if f.endswith(".e57")])
-    for index, file_name in enumerate(files):
-        old_path = os.path.join(source_dir, file_name)
-        new_name = f"treedis_{index}.e57"
-        new_path = os.path.join(target_dir, new_name)
+    try:
+        files = sorted([f for f in os.listdir(source_dir) if f.endswith(".e57")])
+        for index, file_name in enumerate(files):
+            old_path = os.path.join(source_dir, file_name)
+            new_name = f"treedis_{index}.e57"
+            new_path = os.path.join(target_dir, new_name)
 
-        logging.info(f"Renaming {old_path} to {new_path}...")
-        os.rename(old_path, new_path)
+            logging.info(f"Renaming {old_path} to {new_path}...")
+            os.rename(old_path, new_path)
 
-    # Remove the source directory after files are moved
-    logging.info(f"Removing source directory: {source_dir}...")
-    shutil.rmtree(source_dir)
-    logging.info(f"All files have been renamed and moved to {target_dir}.")
+        logging.info(f"All `.e57` files moved to {target_dir}.")
+    except Exception as e:
+        logging.error("Failed to rename and move files", exc_info=True)
+        raise RuntimeError(f"Error renaming or moving files in {source_dir}: {e}") from e
+    finally:
+        shutil.rmtree(source_dir)
+        logging.info(f"Source directory {source_dir} removed.")
 
+
+def send_job_status_request(name, status, message):
+    """
+    Sends a job status update to the API.
+    """
+    api_domain = os.getenv("API_DOMAIN")
+    endpoint = f"{api_domain}/v1/api/convert/updateJobStatus"
+    payload = {"name": name, "status": status, "message": message}
+
+    try:
+        response = requests.post(endpoint, json=payload)
+        if response.status_code == 200:
+            logging.info(f"Job status updated successfully: {response.json()}")
+        else:
+            logging.error(f"API returned status {response.status_code}: {response.text}")
+
+    except requests.exceptions.RequestException as e:
+        logging.error(
+            {
+                "message": "Failed to send job status update",
+                "error": str(e),
+                "url": endpoint,
+            },
+            exc_info=True,
+        )
 
 def run_unpack_script():
+    """
+    Processes `.e57` files in the scans folder by unpacking and removing the originals.
+    Raises errors if the folder doesn't exist or files cannot be processed.
+    """
     scans_folder = "./scans"
 
     try:
         if not os.path.exists(scans_folder):
+            logging.error(f"Folder not found: {scans_folder}")
             raise RuntimeError(f"The folder '{scans_folder}' does not exist.")
+
+        if not os.access(scans_folder, os.R_OK | os.W_OK):
+            logging.error(f"Permission denied for folder: {scans_folder}")
+            raise PermissionError(f"Insufficient permissions for folder '{scans_folder}'.")
 
         for file_name in os.listdir(scans_folder):
             file_path = os.path.join(scans_folder, file_name)
 
             if os.path.isfile(file_path):
                 try:
+                    logging.info(f"Unpacking file: {file_name}")
                     unpack(file_path)
                     os.remove(file_path)
+                    logging.info(f"Successfully processed and removed file: {file_name}")
                 except Exception as e:
-                    logging.error(f"Error unpacking file '{file_name}': {e}")
-                    raise e
+                    logging.error(f"Error unpacking file '{file_name}': {str(e)}", exc_info=True)
+                    continue  # Skip the problematic file but continue processing other files
 
-        logging.info("Unpack script completed.")
+        logging.info("Unpack script completed successfully.")
 
     except Exception as e:
+        logging.critical(f"An error occurred during unpacking: {str(e)}", exc_info=True)
+        raise RuntimeError(f"Unpack script failed: {str(e)}") from e
 
-        raise RuntimeError(f"An error occurred during unpacking: {e}")
 
 def run_submit_script():
+    """
+    Submits processed folders in the scans directory.
+    Deletes the scans folder upon successful completion.
+    Raises errors for missing folders or processing issues.
+    """
     scans_folder = "./scans"
 
     try:
         if not os.path.exists(scans_folder):
+            logging.error(f"Folder not found: {scans_folder}")
             raise RuntimeError(f"The folder '{scans_folder}' does not exist.")
 
+        if not os.access(scans_folder, os.R_OK | os.W_OK):
+            logging.error(f"Permission denied for folder: {scans_folder}")
+            raise PermissionError(f"Insufficient permissions for folder '{scans_folder}'.")
+
+        processed_count = 0
         for item in os.listdir(scans_folder):
             folder_path = os.path.join(scans_folder, item)
 
             if os.path.isdir(folder_path) and item.endswith("-out"):
-                name = item.split("-out")[0]
-                submit(name)
+                try:
+                    name = item.split("-out")[0]
+                    logging.info(f"Submitting folder: {item} with name: {name}")
+                    submit(name)
+                    processed_count += 1
+                except Exception as e:
+                    logging.error(f"Error submitting folder '{item}': {str(e)}", exc_info=True)
+                    continue  # Skip the problematic folder but continue processing others
 
+        if processed_count == 0:
+            logging.warning("No folders matching the criteria were found for submission.")
+
+        # Remove the scans folder only if no exceptions occurred
         shutil.rmtree(scans_folder)
-        logging.info("Submit script completed.")
+        logging.info(f"Submit script completed. Removed folder: {scans_folder}")
 
     except Exception as e:
-        raise RuntimeError(f"An error occurred during submission: {str(e)}")
+        logging.critical(f"Submission failed: {str(e)}", exc_info=True)
+        raise RuntimeError(f"Submit script failed: {str(e)}") from e
 
-
-def send_job_status_request(name, status, message):
-    api_domain = os.getenv("API_DOMAIN")
-    endpoint = f"{api_domain}/v1/api/convert/updateJobStatus"
-
-    payload = {
-        "name": name,
-        "status": status,
-        "message": message
-    }
-
-    try:
-        response = requests.post(endpoint, json=payload)
-
-        # Check if the request was successful
-        if response.status_code == 200:
-            logging.info(f"Response: {str(response.json())}")
-        else:
-            logging.error(f"Failed with status code: {response.status_code}")
-            logging.error(f"Response: {str(response.text)}")
-    except requests.exceptions.RequestException as e:
-        # Handle request exceptions
-        logging.error(f"Error: {str(e)}")
 
 
 def main():
@@ -207,7 +229,7 @@ def main():
 
     if not auth_key or not matter_id:
         raise EnvironmentError(
-            "Missing required environment variables: MATTERPORT_OAUTH_TOKEN and MATTERPORT_ID."
+            "Missing environment variables: MATTERPORT_OAUTH_TOKEN or MATTERPORT_ID."
         )
 
     output_file = "treedis.zip"
@@ -221,15 +243,16 @@ def main():
         rename_and_move_files(extract_to, scans_dir)
         run_unpack_script()
         run_submit_script()
+
     except Exception as e:
-        logging.error(f"Fatal error: {e}")
-        send_job_status_request(os.getenv('FILE_PREFIX'), "processingError", str(e))
-        raise e
+        logging.critical("Fatal error during execution", exc_info=True)
+        send_job_status_request(os.getenv("FILE_PREFIX"), "processingError", str(e))
+        sys.exit(1)
 
 
 if __name__ == "__main__":
     try:
         main()
     except Exception as e:
-        logging.critical(f"Program terminated with an error: {e}", exc_info=True)
+        logging.critical("Program terminated with an error", exc_info=True)
         sys.exit(1)
