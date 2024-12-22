@@ -156,33 +156,6 @@ def run_unpack_script():
 
         raise RuntimeError(f"An error occurred during unpacking: {e}")
 
-def submit_with_retries(name, max_retries=3, delay_seconds=10):
-    """
-    Attempts to submit a name with retries.
-
-    Args:
-        name (str): The name to submit.
-        max_retries (int): Maximum number of retries. Defaults to 3.
-        delay_seconds (int): Delay between retries in seconds. Defaults to 10.
-
-    Returns:
-        bool: True if submission is successful, False otherwise.
-    """
-    for attempt in range(1, max_retries + 1):
-        try:
-            submit(name)  # Replace this with your actual submission logic
-            logging.info(f"Successfully submitted {name} on attempt {attempt}.")
-            return True
-        except Exception as e:
-            logging.error(f"Error submitting {name} on attempt {attempt}: {str(e)}")
-            if attempt < max_retries:
-                logging.info(f"Retrying in {delay_seconds} seconds...")
-                time.sleep(delay_seconds)
-            else:
-                logging.error(f"Failed to submit {name} after {max_retries} attempts.")
-    return False
-
-
 def run_submit_script():
     scans_folder = "./scans"
 
@@ -195,10 +168,7 @@ def run_submit_script():
 
             if os.path.isdir(folder_path) and item.endswith("-out"):
                 name = item.split("-out")[0]
-
-                if not submit_with_retries(name):
-                    logging.critical(f"Submission of {name} ultimately failed.")
-                    raise RuntimeError(f"Submission of {name} ultimately failed.")
+                submit(name)
 
         shutil.rmtree(scans_folder)
         logging.info("Submit script completed.")
