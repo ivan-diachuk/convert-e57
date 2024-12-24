@@ -7,6 +7,8 @@ from unpack import unpack
 from submit import submit
 import logging
 import sys
+import boto3
+from pathlib import Path
 
 load_dotenv()
 
@@ -15,8 +17,7 @@ logging.basicConfig(
     format="%(asctime)s - %(levelname)s - %(message)s",
 )
 
-
-def fetch_matterport_assets(auth_key, matter_id):
+def fetch_matterport_assets(auth_key, matter_id, bundle_id):
     """
     Fetches assets from the Matterport API.
     """
@@ -28,7 +29,7 @@ def fetch_matterport_assets(auth_key, matter_id):
     query = f"""
         query Model {{
             model(id: "{matter_id}") {{
-                bundle(id: "mp:e57") {{
+                bundle(id: "{bundle_id}") {{
                     availability
                     assets {{
                         url
@@ -222,6 +223,46 @@ def run_submit_script():
         raise RuntimeError(f"Submit script failed: {str(e)}") from e
 
 
+def upload_obj_to_s3():
+    auth_key = os.getenv("MATTERPORT_OAUTH_TOKEN")
+    matter_id = os.getenv("MATTERPORT_ID")
+    tour_slug = os.getenv("TOUR_SLUG")
+    output_file = "treedis_obj.zip"
+    extract_to = "treedis_obj"
+    s3_prefix = "ImmersalToursData"
+    s3_bucket_name = os.getenv("S3_BUCKET_NAME")
+
+    obj_url = fetch_matterport_assets(auth_key, matter_id, "mp:matterpak")
+    download_file(obj_url, output_file)
+    unzip_file(output_file, extract_to)
+
+    # Initialize S3 client
+    s3_client = boto3.client("s3")
+
+    # Find the .obj file
+    obj_file_path = None
+    for root, dirs, files in os.walk(extract_to):
+        for file in files:
+            if file.endswith(".obj"):
+                obj_file_path = Path(root) / file
+                break
+        if obj_file_path:
+            break
+
+    if obj_file_path:
+        # Generate S3 key
+        s3_key = f"{s3_prefix}/{tour_slug}/{tour_slug}.obj"
+
+        # Upload the .obj file to S3
+        s3_client.upload_file(
+            Filename=str(obj_file_path),
+            Bucket=s3_bucket_name,
+            Key=str(s3_key)
+        )
+        print(f"Uploaded {obj_file_path} to s3://{s3_bucket_name}/{s3_key}")
+    else:
+        print("No .obj file found in the extracted directory.")
+
 
 def main():
     auth_key = os.getenv("MATTERPORT_OAUTH_TOKEN")
@@ -237,13 +278,13 @@ def main():
     scans_dir = "scans"
 
     try:
-        asset_url = fetch_matterport_assets(auth_key, matter_id)
+        asset_url = fetch_matterport_assets(auth_key, matter_id, "mp:e57")
         download_file(asset_url, output_file)
         unzip_file(output_file, extract_to)
         rename_and_move_files(extract_to, scans_dir)
         run_unpack_script()
         run_submit_script()
-
+        upload_obj_to_s3()
     except Exception as e:
         logging.critical(f"Fatal error during execution: {str(e)}", exc_info=True)
         # send_job_status_request(os.getenv("FILE_PREFIX"), "processingError", str(e))
