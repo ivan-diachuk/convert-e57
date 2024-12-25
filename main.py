@@ -51,7 +51,7 @@ def fetch_matterport_assets(auth_key, matter_id, bundle_id):
 
         logging.info("Bundle availability: %s", bundle["availability"])
         logging.info("Returning asset URL: %s", assets[0]["url"])
-        
+
         return assets[0]["url"]
 
     except requests.exceptions.RequestException as e:
@@ -283,12 +283,12 @@ def main():
     scans_dir = "scans"
 
     try:
-        asset_url = fetch_matterport_assets(auth_key, matter_id, "mp:e57")
-        download_file(asset_url, output_file)
-        unzip_file(output_file, extract_to)
-        rename_and_move_files(extract_to, scans_dir)
-        run_unpack_script()
-        run_submit_script()
+        #asset_url = fetch_matterport_assets(auth_key, matter_id, "mp:e57")
+        #download_file(asset_url, output_file)
+        #unzip_file(output_file, extract_to)
+        #rename_and_move_files(extract_to, scans_dir)
+        #run_unpack_script()
+        #run_submit_script()
         upload_obj_to_s3()
     except Exception as e:
         logging.critical(f"Fatal error during execution: {str(e)}", exc_info=True)
