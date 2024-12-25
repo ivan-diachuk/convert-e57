@@ -44,9 +44,14 @@ def fetch_matterport_assets(auth_key, matter_id, bundle_id):
         response = requests.post(url, json=payload, headers=headers)
         response.raise_for_status()
         data = response.json()
-        assets = data.get("data", {}).get("model", {}).get("bundle", {}).get("assets", [])
+        bundle = data.get("data", {}).get("model", {}).get("bundle", {})
+        assets = bundle.get("assets", [])
         if not assets or not assets[0].get("url"):
             raise ValueError("No valid asset URL found in the response.")
+
+        logging.info("Bundle availability: %s", bundle["availability"])
+        logging.info("Returning asset URL: %s", assets[0]["url"])
+        
         return assets[0]["url"]
 
     except requests.exceptions.RequestException as e:
