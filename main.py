@@ -255,16 +255,30 @@ def upload_obj_to_s3():
             break
 
     if obj_file_path:
+        if not isinstance(s3_bucket_name, str):
+            raise ValueError("s3_bucket_name must be a string")
+        if not isinstance(s3_prefix, str):
+            raise ValueError("s3_prefix must be a string")
+        if not isinstance(tour_slug, str):
+            raise ValueError("tour_slug must be a string")
+
         # Generate S3 key
         s3_key = f"{s3_prefix}/{tour_slug}/{tour_slug}.obj"
+        print(s3_key)
+
+        if not obj_file_path.exists():
+            raise FileNotFoundError(f"The file {obj_file_path} does not exist.")
 
         # Upload the .obj file to S3
-        s3_client.upload_file(
-            Filename=str(obj_file_path),
-            Bucket=s3_bucket_name,
-            Key=str(s3_key)
-        )
-        print(f"Uploaded {obj_file_path} to s3://{s3_bucket_name}/{s3_key}")
+        try:
+            s3_client.upload_file(
+                Filename=str(obj_file_path),
+                Bucket=s3_bucket_name,
+                Key=s3_key
+            )
+            print(f"Uploaded {obj_file_path} to s3://{s3_bucket_name}/{s3_key}")
+        except Exception as e:
+            print(f"Failed to upload {obj_file_path}: {e}")
     else:
         print("No .obj file found in the extracted directory.")
 
