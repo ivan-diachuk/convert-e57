@@ -228,6 +228,7 @@ def run_submit_script():
         raise RuntimeError(f"Submit script failed: {str(e)}") from e
 
 
+
 def upload_obj_to_s3():
     auth_key = os.getenv("MATTERPORT_OAUTH_TOKEN")
     matter_id = os.getenv("MATTERPORT_ID")
@@ -255,16 +256,9 @@ def upload_obj_to_s3():
             break
 
     if obj_file_path:
-        if not isinstance(s3_bucket_name, str):
-            raise ValueError("s3_bucket_name must be a string")
-        if not isinstance(s3_prefix, str):
-            raise ValueError("s3_prefix must be a string")
-        if not isinstance(tour_slug, str):
-            raise ValueError("tour_slug must be a string")
-
         # Generate S3 key
         s3_key = f"{s3_prefix}/{tour_slug}/{tour_slug}.obj"
-        print(s3_key)
+        print(f"Uploading to: {s3_key}")
 
         if not obj_file_path.exists():
             raise FileNotFoundError(f"The file {obj_file_path} does not exist.")
@@ -278,9 +272,9 @@ def upload_obj_to_s3():
             )
             print(f"Uploaded {obj_file_path} to s3://{s3_bucket_name}/{s3_key}")
         except Exception as e:
-            print(f"Failed to upload {obj_file_path}: {e}")
+            raise Exception(f"Failed to upload {obj_file_path}: {e}")
     else:
-        print("No .obj file found in the extracted directory.")
+        raise FileNotFoundError("No .obj file found in the extracted directory.")
 
 
 def main():
@@ -297,12 +291,12 @@ def main():
     scans_dir = "scans"
 
     try:
-        #asset_url = fetch_matterport_assets(auth_key, matter_id, "mp:e57")
-        #download_file(asset_url, output_file)
-        #unzip_file(output_file, extract_to)
-        #rename_and_move_files(extract_to, scans_dir)
-        #run_unpack_script()
-        #run_submit_script()
+        asset_url = fetch_matterport_assets(auth_key, matter_id, "mp:e57")
+        download_file(asset_url, output_file)
+        unzip_file(output_file, extract_to)
+        rename_and_move_files(extract_to, scans_dir)
+        run_unpack_script()
+        run_submit_script()
         upload_obj_to_s3()
     except Exception as e:
         logging.critical(f"Fatal error during execution: {str(e)}", exc_info=True)
