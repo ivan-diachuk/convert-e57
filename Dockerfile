@@ -5,7 +5,7 @@ FROM python:3.9-slim
 WORKDIR /app/data
 
 # Copy the local code to the container's working directory
-COPY . /app/data
+COPY . .
 
 RUN pip install --upgrade pip
 
