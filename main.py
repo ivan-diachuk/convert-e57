@@ -301,7 +301,7 @@ def main():
         upload_obj_to_s3()
     except Exception as e:
         logging.critical(f"Fatal error during execution: {str(e)}", exc_info=True)
-        # send_job_status_request(os.getenv("FILE_PREFIX"), "processingError", str(e))
+        send_job_status_request(os.getenv("FILE_PREFIX"), "processingError", str(e))
         sys.exit(1)
 
 
