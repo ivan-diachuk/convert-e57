@@ -129,7 +129,7 @@ def send_job_status_request(name, status, message):
     Sends a job status update to the API.
     """
     api_domain = os.getenv("API_DOMAIN")
-    endpoint = f"{api_domain}/v1/api/convert/updateJobStatus"
+    endpoint = f"https://{api_domain}/v1/api/convert/updateJobStatus"
     payload = {"name": name, "status": status, "message": message}
 
     try:
