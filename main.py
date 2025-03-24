@@ -156,7 +156,7 @@ def run_unpack_script():
     Processes `.e57` files in the scans folder by unpacking and removing the originals.
     Raises errors if the folder doesn't exist or files cannot be processed.
     """
-    scans_folder = "./scans"
+    scans_folder = f"{ROOT_DIR}/scans"
 
     try:
         if not os.path.exists(scans_folder):
