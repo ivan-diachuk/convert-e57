@@ -235,8 +235,8 @@ def upload_obj_to_s3():
     auth_key = os.getenv("MATTERPORT_OAUTH_TOKEN")
     matter_id = os.getenv("MATTERPORT_ID")
     tour_slug = os.getenv("TOUR_SLUG")
-    output_file = "treedis_obj.zip"
-    extract_to = "treedis_obj"
+    output_file = f"{ROOT_DIR}/treedis_obj.zip"
+    extract_to = f"{ROOT_DIR}/treedis_obj"
     s3_prefix = "ImmersalToursData"
     s3_bucket_name = os.getenv("S3_BUCKET_NAME")
 
