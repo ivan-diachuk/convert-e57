@@ -7,6 +7,8 @@ WORKDIR /
 # Copy the local code to the container's working directory
 COPY . /app/data
 
+WORKDIR /app/data
+
 RUN pip install --upgrade pip
 
 # Install required library for OpenCV
