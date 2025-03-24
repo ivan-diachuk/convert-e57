@@ -2,7 +2,7 @@
 FROM python:3.9-slim
 
 # Set the working directory inside the container
-WORKDIR /
+WORKDIR /tmp/data
 
 # Copy the local code to the container's working directory
 COPY . .
