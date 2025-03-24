@@ -287,10 +287,12 @@ def main():
             "Missing environment variables: MATTERPORT_OAUTH_TOKEN or MATTERPORT_ID."
         )
 
-    output_file = "treedis.zip"
-    extract_to = "tmp_scans"
-    scans_dir = "scans"
-
+    output_file = "/app/data/treedis.zip"
+    print(output_file)
+    extract_to = "/app/data/tmp_scans"
+    print(extract_to)
+    scans_dir = "/app/data/scans"
+    print(scans_dir)
     try:
         asset_url = fetch_matterport_assets(auth_key, matter_id, "mp:e57")
         download_file(asset_url, output_file)
