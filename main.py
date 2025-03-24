@@ -17,6 +17,8 @@ logging.basicConfig(
     format="%(asctime)s - %(levelname)s - %(message)s",
 )
 
+ROOT_DIR = '/app/data'
+
 def fetch_matterport_assets(auth_key, matter_id, bundle_id):
     """
     Fetches assets from the Matterport API.
@@ -191,7 +193,7 @@ def run_submit_script():
     Deletes the scans folder upon successful completion.
     Raises errors for missing folders or processing issues.
     """
-    scans_folder = "./scans"
+    scans_folder = f"/{ROOT_DIR}/scans"
 
     try:
         if not os.path.exists(scans_folder):
@@ -287,12 +289,12 @@ def main():
             "Missing environment variables: MATTERPORT_OAUTH_TOKEN or MATTERPORT_ID."
         )
 
-    output_file = "/app/data/treedis.zip"
-    print(output_file)
-    extract_to = "/app/data/tmp_scans"
-    print(extract_to)
-    scans_dir = "/app/data/scans"
-    print(scans_dir)
+    output_file = f"/{ROOT_DIR}/treedis.zip"
+    logging.info(output_file)
+    extract_to = f"/{ROOT_DIR}/tmp_scans"
+    logging.info(extract_to)
+    scans_dir = f"/{ROOT_DIR}/scans"
+    logging.info(scans_dir)
     try:
         asset_url = fetch_matterport_assets(auth_key, matter_id, "mp:e57")
         download_file(asset_url, output_file)
