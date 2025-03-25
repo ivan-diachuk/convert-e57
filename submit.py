@@ -248,7 +248,7 @@ def submit(map_name: str):
         raise ValueError(f"Invalid map_name format: {map_name}")
 
     # Path of your Matterport scan output
-    input_directory = r"./scans/" + map_name + "-out/"
+    input_directory = r"/app/data/scans/" + map_name + "-out/"
 
     # set submit too False to only visualize poses
     process_params = ProcessParams(submit=True)
