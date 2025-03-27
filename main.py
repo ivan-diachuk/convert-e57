@@ -274,8 +274,6 @@ def upload_obj_to_s3():
                 ExtraArgs={'ACL': 'public-read'}
             )
             print(f"Uploaded {obj_file_path} to s3://{s3_bucket_name}/{s3_key}")
-            os.remove(output_file)
-            os.remove(extract_to)
         except Exception as e:
             raise Exception(f"Failed to upload {obj_file_path}: {e}")
     else:
