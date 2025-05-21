@@ -297,12 +297,12 @@ def main():
     logging.info(scans_dir)
     try:
         asset_url = fetch_matterport_assets(auth_key, matter_id, "mp:e57")
+        upload_obj_to_s3()
         download_file(asset_url, output_file)
         unzip_file(output_file, extract_to)
         rename_and_move_files(extract_to, scans_dir)
         run_unpack_script()
         run_submit_script()
-        upload_obj_to_s3()
     except Exception as e:
         logging.critical(f"Fatal error during execution: {str(e)}", exc_info=True)
         send_job_status_request(os.getenv("FILE_PREFIX"), "error", str(e))
