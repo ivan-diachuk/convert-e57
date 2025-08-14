@@ -234,7 +234,6 @@ def run_submit_script():
 def upload_obj_to_s3():
     auth_key = os.getenv("MATTERPORT_OAUTH_TOKEN")
     matter_id = os.getenv("MATTERPORT_ID")
-    tour_slug = os.getenv("TOUR_SLUG")
     output_file = "treedis_obj.zip"
     extract_to = "treedis_obj"
     s3_prefix = "ImmersalToursData"
@@ -259,7 +258,7 @@ def upload_obj_to_s3():
 
     if obj_file_path:
         # Generate S3 key
-        s3_key = f"{s3_prefix}/{tour_slug}/{tour_slug}.obj"
+        s3_key = f"{s3_prefix}/{matter_id}/model.obj"
         print(f"Uploading to: {s3_key}")
 
         if not obj_file_path.exists():
