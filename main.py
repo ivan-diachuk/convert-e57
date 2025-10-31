@@ -269,8 +269,7 @@ def upload_obj_to_s3():
             s3_client.upload_file(
                 Filename=str(obj_file_path),
                 Bucket=s3_bucket_name,
-                Key=s3_key,
-                ExtraArgs={'ACL': 'public-read'}
+                Key=s3_key
             )
             print(f"Uploaded {obj_file_path} to s3://{s3_bucket_name}/{s3_key}")
         except Exception as e:
