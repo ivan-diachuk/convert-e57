@@ -1,4 +1,4 @@
-def GIT_CREDENTIALS = 'github-credentials'
+def GIT_CREDENTIALS = 'github-password-credentials'
 def AGENT_LABEL = 'main'
 def DEFAULT_AWS_REGION = 'us-east-1'
 def MAIN_AWS_CREDENTIALS_NAME = 'main-aws-credentials'
