@@ -1,4 +1,4 @@
-def GIT_CREDENTIALS = 'bitbucket-password-credentials'
+def GIT_CREDENTIALS = 'github-credentials'
 def AGENT_LABEL = 'main'
 def DEFAULT_AWS_REGION = 'us-east-1'
 def MAIN_AWS_CREDENTIALS_NAME = 'main-aws-credentials'
@@ -26,7 +26,7 @@ pipeline {
     environment {
         IMAGE_TAG = 'latest'
         IMAGE_REPO_NAME = 'e57-converter-repository'
-        GIT_REPOSITORY_URL = 'https://treedis_automation@bitbucket.org/treedis/convert-e57.git'
+        GIT_REPOSITORY_URL = 'https://github.com/ivan-diachuk/convert-e57.git'
     }
 
     stages {
@@ -52,7 +52,7 @@ pipeline {
                     script {
                         checkout([
                             $class: 'GitSCM',
-                            branches: [[name: '*/master']],
+                            branches: [[name: '*/main']],
                             userRemoteConfigs: [[
                                 url: GIT_REPOSITORY_URL,
                                 credentialsId: GIT_CREDENTIALS
@@ -67,8 +67,8 @@ pipeline {
             steps {
                 withCredentials([usernamePassword(
                     credentialsId: GIT_CREDENTIALS,
-                    usernameVariable: 'BITBUCKET_USERNAME',
-                    passwordVariable: 'BITBUCKET_PASSWORD'
+                    usernameVariable: 'GITHUB_USERNAME',
+                    passwordVariable: 'GITHUB_PASSWORD'
                 )]) {
                     withAWS(credentials: MAIN_AWS_CREDENTIALS_NAME) {
                         sh '''
